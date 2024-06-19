@@ -14,30 +14,36 @@ public class Chat extends JFrame {
     private JTextField message;
     private JButton sendButton;
     private JButton logoutButton;
+    private JList<String> userList;
 
     private final MessageConsumer messageConsumer;
-    private final String id;
+    private final DefaultListModel<String> listModel = new DefaultListModel<>();
+    private final String username;
     private final String topic;
+    private boolean running = true;
 
-    public Chat(String topic, String id) throws HeadlessException {
-        this.id = id;
+    public Chat(String topic, String username) throws HeadlessException {
+        this.messageConsumer = new MessageConsumer(topic, username);
+        this.username = username;
         this.topic = topic;
-        this.messageConsumer = new MessageConsumer(topic, id);
 
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-        this.add(createMainPanel());
         this.setVisible(true);
-        this.setTitle(topic + "  - " +  id);
-        this.setSize(500, 400);
+        this.setTitle(topic + " - " + username);
+        this.setSize(800, 600);
+
+        initializeComponents();
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            while (true) {
+            while (running) {
                 messageConsumer.kafkaConsumer.poll(java.time.Duration.ofSeconds(1)).forEach(
                         m -> {
                             chatView.append(m.value() + System.lineSeparator());
+                            updateUsersList(m.value());
                         }
                 );
             }
+            messageConsumer.kafkaConsumer.close();
         });
 
         sendButton.addActionListener(new ActionListener() {
@@ -46,7 +52,7 @@ public class Chat extends JFrame {
                 String text = message.getText();
                 String formattedMessage = String.format("%s [%s]: %s",
                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")),
-                        id, text);
+                        username, text);
                 MessageProducer.send(new ProducerRecord<>(topic, formattedMessage));
                 message.setText("");
             }
@@ -55,44 +61,65 @@ public class Chat extends JFrame {
         logoutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                running = false;
                 dispose();
+                new Login();
             }
         });
     }
 
-    private JPanel createMainPanel() {
+    private void initializeComponents() {
         mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBackground(new Color(60, 63, 65));
 
         chatView = new JTextArea();
         chatView.setEditable(false);
         chatView.setFont(new Font("Arial", Font.PLAIN, 14));
-        JScrollPane scrollPane = new JScrollPane(chatView);
-        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        chatView.setBackground(new Color(43, 43, 43));
+        chatView.setForeground(Color.WHITE);
+        JScrollPane chatScrollPane = new JScrollPane(chatView);
+        mainPanel.add(chatScrollPane, BorderLayout.CENTER);
 
         JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.setBackground(Color.LIGHT_GRAY);
+        inputPanel.setBackground(new Color(43, 43, 43));
         message = new JTextField();
         message.setFont(new Font("Arial", Font.PLAIN, 14));
+        message.setBackground(new Color(69, 73, 74));
+        message.setForeground(Color.WHITE);
         inputPanel.add(message, BorderLayout.CENTER);
 
-        sendButton = new JButton("Send");
-        sendButton.setBackground(Color.DARK_GRAY);
-        sendButton.setForeground(Color.WHITE);
-        sendButton.setFocusPainted(false); // usuwa efekt focusu
+        sendButton = createButton("Send");
         inputPanel.add(sendButton, BorderLayout.EAST);
 
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.GRAY);
-        logoutButton = new JButton("Logout");
-        logoutButton.setBackground(Color.RED);
-        logoutButton.setForeground(Color.WHITE);
-        logoutButton.setFocusPainted(false); // usuwa efekt focusu
+        topPanel.setBackground(new Color(75, 110, 175));
+        logoutButton = createButton("Logout");
         topPanel.add(logoutButton, BorderLayout.EAST);
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(inputPanel, BorderLayout.SOUTH);
 
-        return mainPanel;
+        userList = new JList<>(listModel);
+        userList.setBackground(new Color(60, 63, 65));
+        userList.setForeground(Color.WHITE);
+        JScrollPane userScrollPane = new JScrollPane(userList);
+        userScrollPane.setPreferredSize(new Dimension(150, 0));
+        mainPanel.add(userScrollPane, BorderLayout.WEST);
+
+        this.add(mainPanel);
     }
 
+    private JButton createButton(String text) {
+        JButton button = new JButton(text);
+        button.setBackground(new Color(75, 110, 175));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        return button;
+    }
+
+    private void updateUsersList(String message) {
+        String newUser = message.split(" ")[1].replace(":", "").replace("[", "").replace("]", "");
+        if (!listModel.contains(newUser)) {
+            listModel.addElement(newUser);
+        }
+    }
 }

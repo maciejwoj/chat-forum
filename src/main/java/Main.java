@@ -8,14 +8,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.Executors;
+
 
 public class Main {
     public static void main(String[] args) {
@@ -23,12 +18,14 @@ public class Main {
                 .kafkaPorts(9092);
         embeddedKafkaBroker.afterPropertiesSet();
 
-        SwingUtilities.invokeLater(() -> new Login());
+        SwingUtilities.invokeLater(Login::new);
     }
 }
 
+
+
 class MessageProducer {
-    private static KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(
+    private static final KafkaProducer<String, String> kafkaProducer = new KafkaProducer<>(
             Map.of(
                     ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
                     ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName(),
@@ -41,6 +38,7 @@ class MessageProducer {
     }
 }
 
+
 class MessageConsumer {
     KafkaConsumer<String, String> kafkaConsumer;
 
@@ -48,11 +46,11 @@ class MessageConsumer {
         this.kafkaConsumer = new KafkaConsumer<>(
                 Map.of(
                         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092",
-                        ConsumerConfig.GROUP_ID_CONFIG, id,
+                        ConsumerConfig.GROUP_ID_CONFIG, id + "-" + System.currentTimeMillis(),
                         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(),
                         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(),
                         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                        ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"
+                        ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true"
                 )
         );
 

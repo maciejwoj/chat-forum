@@ -7,12 +7,11 @@ import java.util.Objects;
 public class Login extends JFrame {
     private JTextField usernameField;
     private JTextField topicField;
-    private JButton loginButton;
     private JPanel mainPanel;
 
     public Login() {
         setTitle("Login");
-        setSize(500, 400);
+        setSize(500, 300);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
         setIconImage(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icon.png"))).getImage());
@@ -24,22 +23,48 @@ public class Login extends JFrame {
     }
 
     private JPanel createLoginPanel() {
-        mainPanel = new JPanel(new GridLayout(3, 2));
-        mainPanel.setBackground(Color.WHITE);
+        mainPanel = new JPanel();
+        mainPanel.setBackground(new Color(60, 63, 65));
+        mainPanel.setLayout(new GridBagLayout());
 
-        mainPanel.add(new JLabel("Username:"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel titleLabel = new JLabel("Chat Application");
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        mainPanel.add(titleLabel, gbc);
+
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.gridwidth = 1;
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        mainPanel.add(createLabel("Username:"), gbc);
+
         usernameField = new JTextField();
-        mainPanel.add(usernameField);
+        gbc.gridx = 1;
+        mainPanel.add(usernameField, gbc);
 
-        mainPanel.add(new JLabel("Topic:"));
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        mainPanel.add(createLabel("Topic:"), gbc);
+
         topicField = new JTextField();
-        mainPanel.add(topicField);
+        gbc.gridx = 1;
+        mainPanel.add(topicField, gbc);
 
-        loginButton = new JButton("Login");
-        loginButton.setBackground(Color.BLUE);
-        loginButton.setForeground(Color.WHITE);
-        loginButton.setFocusPainted(false);
-        mainPanel.add(loginButton);
+        JButton loginButton = createButton("Login");
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        mainPanel.add(loginButton, gbc);
 
         loginButton.addActionListener(new ActionListener() {
             @Override
@@ -48,6 +73,7 @@ public class Login extends JFrame {
                 String topic = topicField.getText();
                 if (!username.isEmpty() && !topic.isEmpty()) {
                     new Chat(topic, username).setVisible(true);
+//                    dispose();
                 } else {
                     JOptionPane.showMessageDialog(mainPanel, "Username and topic cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -56,5 +82,20 @@ public class Login extends JFrame {
 
         return mainPanel;
     }
+
+    private JLabel createLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setForeground(Color.WHITE);
+        return label;
+    }
+
+    private JButton createButton(String text) {
+        JButton button = new JButton(text);
+        button.setBackground(new Color(75, 110, 175));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        return button;
+    }
+
 
 }
